@@ -17,11 +17,6 @@ declare global {
 // MONGODB_URI is inferred as string | undefined
 const MONGODB_URI = process.env.MONGODB_URI
 
-if (!MONGODB_URI) {
-  // Runtime check ensures the app stops if the variable is missing
-  throw new Error("Please define the MONGODB_URI environment variable")
-}
-
 // Use the global cache or initialize it
 let cached = global.mongooseCache
 
@@ -35,14 +30,14 @@ export async function connectDB() {
   }
 
   if (!cached.promise) {
+    if (!MONGODB_URI) {
+      throw new Error("Please define the MONGODB_URI environment variable")
+    }
     const opts = {
       bufferCommands: false,
     }
 
-    // FIX: Use the non-null assertion operator (!) on MONGODB_URI
-    // This tells TypeScript the value is definitely a string, 
-    // relying on the check above.
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       return mongoose
     })
   }
