@@ -1,15 +1,28 @@
 import mongoose from "mongoose"
 
+// ----------------------------------------------------
+// Type Definitions for Global Cache
+// ----------------------------------------------------
 declare global {
-  var mongooseCache: any
+  // Define the structure for your global mongoose cache
+  var mongooseCache: { 
+    conn: typeof mongoose | null; 
+    promise: Promise<typeof mongoose> | null; 
+  }
 }
 
+// ----------------------------------------------------
+// Mongoose Connection Setup
+// ----------------------------------------------------
+// MONGODB_URI is inferred as string | undefined
 const MONGODB_URI = process.env.MONGODB_URI
 
 if (!MONGODB_URI) {
+  // Runtime check ensures the app stops if the variable is missing
   throw new Error("Please define the MONGODB_URI environment variable")
 }
 
+// Use the global cache or initialize it
 let cached = global.mongooseCache
 
 if (!cached) {
@@ -26,7 +39,10 @@ export async function connectDB() {
       bufferCommands: false,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    // FIX: Use the non-null assertion operator (!) on MONGODB_URI
+    // This tells TypeScript the value is definitely a string, 
+    // relying on the check above.
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       return mongoose
     })
   }
@@ -41,6 +57,9 @@ export async function connectDB() {
   return cached.conn
 }
 
+// ----------------------------------------------------
+// Mongoose Schema and Model Definition
+// ----------------------------------------------------
 const productSchema = new mongoose.Schema(
   {
     product_name: { type: String, required: true },
@@ -59,4 +78,5 @@ const productSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
+// Ensure the model is only compiled once
 export const Product = mongoose.models.Product || mongoose.model("Product", productSchema)
